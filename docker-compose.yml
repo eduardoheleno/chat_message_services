@@ -14,7 +14,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.hostname == instance2
+          - node.hostname == instance1
 
   chat_api:
     hostname: chat_api
