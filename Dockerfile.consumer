@@ -1,0 +1,21 @@
+FROM golang:1.25
+
+WORKDIR /app
+
+# RUN go install github.com/air-verse/air@latest
+
+COPY go.mod go.sum .
+COPY vendor ./vendor
+
+COPY cmd/message_consumer ./cmd/message_consumer/
+COPY internal ./internal
+
+# path to allow AIR to detect main.go
+WORKDIR /app/cmd/message_consumer
+
+RUN go env -w GOFLAGS="-mod=vendor"
+RUN go build -o chat_consumer
+
+CMD ["./chat_consumer"]
+
+# CMD air

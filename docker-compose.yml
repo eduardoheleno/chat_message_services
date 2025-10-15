@@ -1,0 +1,79 @@
+services:
+  chat_mysql:
+    hostname: chat_database
+    image: mysql:5
+    command: --default-authentication-plugin=mysql_native_password --sql-mode="STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+    environment:
+      MYSQL_DATABASE: chat_api
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/chat_database_pswd
+      TZ: America/Sao_Paulo
+    networks:
+      - chat_database_network
+    secrets:
+      - chat_database_pswd
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == instance2
+
+  chat_api:
+    hostname: chat_api
+    image: eduardogomesheleno/chat_api:latest
+    environment:
+      GOOSE_DRIVER: mysql
+      GOOSE_MIGRATION_DIR: /app/cmd/api/database/migrations/
+      GOOSE_TABLE: goose_migrations
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/chat_database_pswd
+    networks:
+      - traefik_traefik_proxy
+      - chat_database_network
+    secrets:
+      - chat_database_pswd
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.chat-api.entrypoints=web"
+        - "traefik.http.routers.chat-api.rule=Host(`eduardodev.app.br`) && PathPrefix(`/chat_api`)"
+        - "traefik.http.middlewares.chat-api-strip.stripprefix.prefixes=/chat_api"
+        - "traefik.http.routers.chat-api.middlewares=chat-api-strip"
+        - "traefik.http.services.chat-api.loadbalancer.server.port=8080"
+      placement:
+        constraints:
+          - node.hostname == instance2
+
+  message_consumer:
+    hostname: message_consumer
+    image: eduardogomesheleno/chat_consumer:latest
+    networks:
+      - chat_database_network
+      - rabbitmq_network
+      - redis_network
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == instance2
+
+networks:
+  traefik_traefik_proxy:
+    driver: overlay
+    attachable: true
+    external: true
+
+  chat_database_network:
+    driver: overlay
+    attachable: true
+    external: true
+
+  rabbitmq_network:
+    driver: overlay
+    attachable: true
+    external: true
+
+  redis_network:
+    driver: overlay
+    attachable: true
+    external: true
+
+secrets:
+  chat_database_pswd:
+    external: true

@@ -1,0 +1,24 @@
+FROM golang:1.25
+
+WORKDIR /app
+
+# RUN go install github.com/air-verse/air@latest
+RUN curl -fsSL \
+    https://raw.githubusercontent.com/pressly/goose/master/install.sh |\
+    sh
+# RUN apt-get -y update && apt -y install vim
+
+COPY go.mod go.sum .
+COPY vendor ./vendor
+
+COPY cmd/api ./cmd/api
+COPY internal ./internal
+
+WORKDIR /app/cmd/api
+
+RUN go env -w GOFLAGS="-mod=vendor"
+RUN go build -o chat_api
+
+CMD ["./chat_api"]
+
+# CMD air
