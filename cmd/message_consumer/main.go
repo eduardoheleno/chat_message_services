@@ -4,7 +4,9 @@ import (
 	"chat_service/internal/domain/message"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"os"
 	"strconv"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -33,7 +35,13 @@ func failOnError(err error, msg string) {
 }
 
 func initDatabase() *gorm.DB {
-	dsn := "root:root@tcp(chat_mysql:3306)/chat_service_db?charset=utf8&parseTime=true"
+	dbPsswPath := os.Getenv("MYSQL_ROOT_PASSWORD_FILE")
+	dbPswd, fileErr := os.ReadFile(dbPsswPath)
+	if fileErr != nil {
+		log.Panicf("Password file not found: %s", fileErr)
+	}
+
+	dsn := fmt.Sprintf("root:%s@tcp(chat_database:3306)/chat_api?charset=utf8&parseTime=true", dbPswd)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Panicf("Failed to connect to database: %s", err)

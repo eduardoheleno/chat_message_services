@@ -44,10 +44,14 @@ services:
   message_consumer:
     hostname: message_consumer
     image: eduardogomesheleno/chat_consumer:latest
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/chat_database_pswd
     networks:
       - chat_database_network
       - rabbitmq_network
       - redis_network
+    secrets:
+      - chat_database_pswd
     deploy:
       placement:
         constraints:
